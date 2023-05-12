@@ -75,9 +75,7 @@ class Preprocessor:
 		return self.__string
 
 	def processed_files(self):
-		out = list(self.__processed_files)
-		out.sort()
-		return out
+		return sorted(self.__processed_files)
 
 
 
@@ -90,40 +88,38 @@ def main():
 	# preprocess header(s)
 	toml_h = str(Preprocessor(Path(include_dir, 'toml.h')))
 
-	# strip various things:
-	if 1:
-		for i in range(3):
-			# trailing whitespace
-			toml_h = re.sub('([^ \t])[ \t]+\n', r'\1\n', toml_h)
-			# explicit 'strip this' blocks
-			toml_h = re.sub(r'(?:\n[ \t]*)?//[#!][ \t]*[{][{].*?//[#!][ \t]*[}][}].*?\n', '\n', toml_h, flags=re.S)
-			# spdx license identifiers
-			toml_h = re.sub(r'^\s*//\s*SPDX-License-Identifier:.+?$', '', toml_h, 0, re.I | re.M)
-			# double blank lines
-			toml_h = re.sub('\n(?:[ \t]*\n[ \t]*)+\n', '\n\n', toml_h)
-			# magic comments
-			blank_line = r'(?:[ \t]*\n)'
-			comment_line = r'(?:[ \t]*//(?:[/#!<]| ?(?:---|===|\^\^\^|vvv))[^\n]*\n)'
-			toml_h = re.sub(rf'\n{comment_line}{blank_line}+{comment_line}', '\n', toml_h)
-			toml_h = re.sub(rf'([{{,])\s*\n(?:{comment_line}|{blank_line})+', r'\1\n', toml_h)
-			toml_h = re.sub(rf'{comment_line}+', '\n', toml_h)
-			# consecutive header separators
-			header_separator = r'(?://\*\*\*\**[ \t]+[a-zA-Z0-9_/.-]+[ \t]+\*\*\*\*+\n)'
-			toml_h = re.sub(rf'(?:{header_separator}{blank_line}*)+({header_separator})', r'\1', toml_h)
-			# weird spacing edge case between } and pp directives
-			toml_h = re.sub('\n[}]\n#', r'\n}\n\n#', toml_h, re.S)
-			# enable warnings -> disable warnings
-			toml_h = re.sub('(TOML_ENABLE_WARNINGS;)\n[ \t\n]*\n(TOML_DISABLE_WARNINGS;)', r'', toml_h)
-			# blank lines between consecutive TOML_XXXXX_WARNINGS statements
-			toml_h = re.sub('(TOML_[A-Z_]+?_WARNINGS;)\n[ \t\n]*\n(TOML_[A-Z_]+?_WARNINGS;)', r'\1\n\2', toml_h)
-			# blank lines between consecutive #includes
-			toml_h = re.sub('[#]\s*include\s*<(.+?)>\n[ \t\n]*\n[#]\s*include\s*<(.+?)>', r'#include <\1>\n#include <\2>', toml_h)
-			# blank lines following opening brackets or a comma
-			toml_h = re.sub(r'([^@][({,])\n\n', r'\1\n', toml_h)
-			# blank lines preceeding closing brackets
-			toml_h = re.sub(r'\n\n([ \t]*[})])', r'\n\1', toml_h)
-		# ensure only one trailing newline
-		toml_h = toml_h.strip() + '\n'
+	# magic comments
+	blank_line = r'(?:[ \t]*\n)'
+	comment_line = r'(?:[ \t]*//(?:[/#!<]| ?(?:---|===|\^\^\^|vvv))[^\n]*\n)'
+	# consecutive header separators
+	header_separator = r'(?://\*\*\*\**[ \t]+[a-zA-Z0-9_/.-]+[ \t]+\*\*\*\*+\n)'
+	for _ in range(3):
+		# trailing whitespace
+		toml_h = re.sub('([^ \t])[ \t]+\n', r'\1\n', toml_h)
+		# explicit 'strip this' blocks
+		toml_h = re.sub(r'(?:\n[ \t]*)?//[#!][ \t]*[{][{].*?//[#!][ \t]*[}][}].*?\n', '\n', toml_h, flags=re.S)
+		# spdx license identifiers
+		toml_h = re.sub(r'^\s*//\s*SPDX-License-Identifier:.+?$', '', toml_h, 0, re.I | re.M)
+		# double blank lines
+		toml_h = re.sub('\n(?:[ \t]*\n[ \t]*)+\n', '\n\n', toml_h)
+		toml_h = re.sub(rf'\n{comment_line}{blank_line}+{comment_line}', '\n', toml_h)
+		toml_h = re.sub(rf'([{{,])\s*\n(?:{comment_line}|{blank_line})+', r'\1\n', toml_h)
+		toml_h = re.sub(rf'{comment_line}+', '\n', toml_h)
+		toml_h = re.sub(rf'(?:{header_separator}{blank_line}*)+({header_separator})', r'\1', toml_h)
+		# weird spacing edge case between } and pp directives
+		toml_h = re.sub('\n[}]\n#', r'\n}\n\n#', toml_h, re.S)
+		# enable warnings -> disable warnings
+		toml_h = re.sub('(TOML_ENABLE_WARNINGS;)\n[ \t\n]*\n(TOML_DISABLE_WARNINGS;)', r'', toml_h)
+		# blank lines between consecutive TOML_XXXXX_WARNINGS statements
+		toml_h = re.sub('(TOML_[A-Z_]+?_WARNINGS;)\n[ \t\n]*\n(TOML_[A-Z_]+?_WARNINGS;)', r'\1\n\2', toml_h)
+		# blank lines between consecutive #includes
+		toml_h = re.sub('[#]\s*include\s*<(.+?)>\n[ \t\n]*\n[#]\s*include\s*<(.+?)>', r'#include <\1>\n#include <\2>', toml_h)
+		# blank lines following opening brackets or a comma
+		toml_h = re.sub(r'([^@][({,])\n\n', r'\1\n', toml_h)
+		# blank lines preceeding closing brackets
+		toml_h = re.sub(r'\n\n([ \t]*[})])', r'\n\1', toml_h)
+	# ensure only one trailing newline
+	toml_h = toml_h.strip() + '\n'
 
 	# change TOML_LIB_SINGLE_HEADER to 1
 	toml_h = re.sub(
@@ -145,32 +141,34 @@ def main():
 	print(rf'Library version: {version}')
 
 	# build the preamble (license etc)
-	preamble = []
-	preamble.append(rf'''
+	preamble = [
+		f'''
 // toml++ v{version}
 // https://github.com/marzer/tomlplusplus
-// SPDX-License-Identifier: MIT''')
-	preamble.append(r'''
+// SPDX-License-Identifier: MIT''',
+		'''
 // -         THIS FILE WAS ASSEMBLED FROM MULTIPLE HEADER FILES BY A SCRIPT - PLEASE DON'T EDIT IT DIRECTLY            -
 //
 // If you wish to submit a contribution to toml++, hooray and thanks! Before you crack on, please be aware that this
 // file was assembled from a number of smaller files by a python script, and code contributions should not be made
 // against it directly. You should instead make your changes in the relevant source file(s). The file names of the files
-// that contributed to this header can be found at the beginnings and ends of the corresponding sections of this file.''')
-	preamble.append(r'''
+// that contributed to this header can be found at the beginnings and ends of the corresponding sections of this file.''',
+		'''
 // TOML Language Specifications:
 // latest:      https://github.com/toml-lang/toml/blob/master/README.md
 // v1.0.0:      https://toml.io/en/v1.0.0
 // v0.5.0:      https://toml.io/en/v0.5.0
-// changelog:   https://github.com/toml-lang/toml/blob/master/CHANGELOG.md''')
-	preamble.append(utils.read_all_text_from_file(Path(utils.entry_script_dir(), '..', 'LICENSE').resolve(), logger=True))
-
+// changelog:   https://github.com/toml-lang/toml/blob/master/CHANGELOG.md''',
+		utils.read_all_text_from_file(
+			Path(utils.entry_script_dir(), '..', 'LICENSE').resolve(), logger=True
+		),
+	]
 	# write the output
 	with StringIO(newline='\n') as output:
 
 		# build in a string buffer
 		write = lambda txt, end='\n': print(txt, file=output, end=end)
-		if (len(preamble) > 0):
+		if preamble:
 			write(utils.make_divider())
 		for pre in preamble:
 			write('//')
@@ -188,70 +186,68 @@ def main():
 
 		output_str = output.getvalue().strip()
 
-		# analyze the output to find any potentially missing #undefs
-		if 1:
-			re_define = re.compile(r'^\s*#\s*define\s+([a-zA-Z0-9_]+)(?:$|\s|\()')
-			re_undef = re.compile(r'^\s*#\s*undef\s+([a-zA-Z0-9_]+)(?:$|\s|//)')
-			defines = dict()
-			for output_line in output_str.splitlines():
-				defined = True
-				m = re_define.match(output_line)
-				if not m:
-					defined = False
-					m = re_undef.match(output_line)
-				if m:
-					defines[m.group(1)] = defined
-			ignore_list = ( # macros that are meant to stay public (user configs etc)
-				r'INCLUDE_TOMLPLUSPLUS_H',
-				r'POXY_IMPLEMENTATION_DETAIL',
-				r'TOML_ALL_INLINE',
-				r'TOML_API',
-				r'TOML_CALLCONV',
-				r'TOML_CONCAT',
-				r'TOML_CONCAT_1',
-				r'TOML_CONFIG_HEADER',
-				r'TOML_ENABLE_FORMATTERS',
-				r'TOML_ENABLE_PARSER',
-				r'TOML_ENABLE_SIMD',
-				r'TOML_ENABLE_UNRELEASED_FEATURES',
-				r'TOML_ENABLE_WINDOWS_COMPAT',
-				r'TOML_ENABLE_FLOAT16',
-				r'TOML_EXCEPTIONS',
-				r'TOML_EXPORTED_CLASS',
-				r'TOML_EXPORTED_FREE_FUNCTION',
-				r'TOML_EXPORTED_MEMBER_FUNCTION',
-				r'TOML_EXPORTED_STATIC_FUNCTION',
-				r'TOML_HEADER_ONLY',
-				r'TOML_LANG_MAJOR',
-				r'TOML_LANG_MINOR',
-				r'TOML_LANG_PATCH',
-				r'TOML_LIB_MAJOR',
-				r'TOML_LIB_MINOR',
-				r'TOML_LIB_PATCH',
-				r'TOML_LIB_SINGLE_HEADER',
-				r'TOML_MAX_NESTED_VALUES',
-				r'TOML_NAMESPACE_END',
-				r'TOML_NAMESPACE_START',
-				r'TOML_OPTIONAL_TYPE',
-				r'TOML_SMALL_FLOAT_TYPE',
-				r'TOML_SMALL_INT_TYPE',
-				r'TOML_UNDEF_MACROS',
-				r'TOMLPLUSPLUS_H',
-				r'TOML_SHARED_LIB'
-			)
-			set_defines = []
-			for define, currently_set in defines.items():
-				if currently_set and define not in ignore_list:
-					set_defines.append(define)
-			if len(set_defines) > 0:
-				set_defines.sort()
-				print(f"Potentially missing #undefs:")
-				for define in set_defines:
-					print(f"\t#undef {define}")
+		re_define = re.compile(r'^\s*#\s*define\s+([a-zA-Z0-9_]+)(?:$|\s|\()')
+		re_undef = re.compile(r'^\s*#\s*undef\s+([a-zA-Z0-9_]+)(?:$|\s|//)')
+		defines = {}
+		for output_line in output_str.splitlines():
+			defined = True
+			m = re_define.match(output_line)
+			if not m:
+				defined = False
+				m = re_undef.match(output_line)
+			if m:
+				defines[m[1]] = defined
+		ignore_list = ( # macros that are meant to stay public (user configs etc)
+			r'INCLUDE_TOMLPLUSPLUS_H',
+			r'POXY_IMPLEMENTATION_DETAIL',
+			r'TOML_ALL_INLINE',
+			r'TOML_API',
+			r'TOML_CALLCONV',
+			r'TOML_CONCAT',
+			r'TOML_CONCAT_1',
+			r'TOML_CONFIG_HEADER',
+			r'TOML_ENABLE_FORMATTERS',
+			r'TOML_ENABLE_PARSER',
+			r'TOML_ENABLE_SIMD',
+			r'TOML_ENABLE_UNRELEASED_FEATURES',
+			r'TOML_ENABLE_WINDOWS_COMPAT',
+			r'TOML_ENABLE_FLOAT16',
+			r'TOML_EXCEPTIONS',
+			r'TOML_EXPORTED_CLASS',
+			r'TOML_EXPORTED_FREE_FUNCTION',
+			r'TOML_EXPORTED_MEMBER_FUNCTION',
+			r'TOML_EXPORTED_STATIC_FUNCTION',
+			r'TOML_HEADER_ONLY',
+			r'TOML_LANG_MAJOR',
+			r'TOML_LANG_MINOR',
+			r'TOML_LANG_PATCH',
+			r'TOML_LIB_MAJOR',
+			r'TOML_LIB_MINOR',
+			r'TOML_LIB_PATCH',
+			r'TOML_LIB_SINGLE_HEADER',
+			r'TOML_MAX_NESTED_VALUES',
+			r'TOML_NAMESPACE_END',
+			r'TOML_NAMESPACE_START',
+			r'TOML_OPTIONAL_TYPE',
+			r'TOML_SMALL_FLOAT_TYPE',
+			r'TOML_SMALL_INT_TYPE',
+			r'TOML_UNDEF_MACROS',
+			r'TOMLPLUSPLUS_H',
+			r'TOML_SHARED_LIB'
+		)
+		if set_defines := [
+			define
+			for define, currently_set in defines.items()
+			if currently_set and define not in ignore_list
+		]:
+			set_defines.sort()
+			print("Potentially missing #undefs:")
+			for define in set_defines:
+				print(f"\t#undef {define}")
 
 		# write the output file
 		output_file_path = Path(utils.entry_script_dir(), '..', 'toml.hpp').resolve()
-		print("Writing to {}".format(output_file_path))
+		print(f"Writing to {output_file_path}")
 		with open(output_file_path,'w', encoding='utf-8', newline='\n') as output_file:
 			print(output_str, file=output_file)
 

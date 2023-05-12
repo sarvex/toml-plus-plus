@@ -17,8 +17,7 @@ def main():
 	mode_keys = [ '!!debug', '!x86', 'cpplatest', 'unrel', 'noexcept' ]
 	modes = [ [] ]
 	for n in range(1, len(mode_keys)):
-		for combo in itertools.combinations(mode_keys, n):
-			modes.append([i for i in combo])
+		modes.extend(list(combo) for combo in itertools.combinations(mode_keys, n))
 	modes.append(mode_keys)
 	for mode in modes:
 		if '!x86' not in mode:
@@ -36,7 +35,7 @@ def main():
 	configuration_name = lambda x: 'Debug' if x.lower() == 'debug' else 'Release'
 	platform_name = lambda x: 'Win32' if x == 'x86' else x
 	for mode in modes:
-		file_path = Path(test_root, 'test_{}.vcxproj'.format('_'.join(mode)))
+		file_path = Path(test_root, f"test_{'_'.join(mode)}.vcxproj")
 		print(f"Writing to {file_path}")
 		with open(file_path, 'w', encoding='utf-8-sig', newline='\r\n') as file:
 			write = lambda txt: print(txt, file=file)

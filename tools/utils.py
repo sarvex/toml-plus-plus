@@ -22,13 +22,13 @@ def repeat_pattern(pattern, count):
 
 def make_divider(text = None, text_col = 40, pattern = '-', line_length = 120):
 	if (text is None):
-		return "//" + repeat_pattern(pattern, line_length-2)
-	else:
-		text = "//{}  {}  ".format(repeat_pattern(pattern, text_col - 2), text);
-		if (len(text) < line_length):
-			return text + repeat_pattern(pattern, line_length - len(text))
-		else:
-			return text
+		return f"//{repeat_pattern(pattern, line_length - 2)}"
+	text = f"//{repeat_pattern(pattern, text_col - 2)}  {text}  ";
+	return (
+		text + repeat_pattern(pattern, line_length - len(text))
+		if (len(text) < line_length)
+		else text
+	)
 
 
 
